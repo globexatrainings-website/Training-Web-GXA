@@ -36,6 +36,19 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=YOUR_SUPABASE_ANON_KEY
 
 Do not use a Supabase `service_role` key in this project or expose it in browser code.
 
+## Trainee login gate
+
+The public homepage now redirects to `/login`. Trainees use one shared access password, configured by the administrator. After login, the browser receives a signed, HTTP-only session cookie that expires after 7 days. The Supabase admin login at `/admin` remains separate.
+
+Add these two additional environment variables in Vercel:
+
+```env
+PORTAL_ACCESS_PASSWORD=your-strong-shared-trainee-password
+PORTAL_SESSION_SECRET=a-long-random-secret-at-least-32-characters
+```
+
+Use a different value for each variable. Keep `PORTAL_SESSION_SECRET` private. Redeploy after adding them. Share the trainee password only with authorised trainees. This is a shared-password gate, not individual trainee accounts.
+
 ## 3. Run locally
 
 Install Node.js 20.9 or newer, then run:
@@ -52,7 +65,7 @@ Open http://localhost:3000. Admin page: http://localhost:3000/admin.
 1. Create a new **public or private** GitHub repository.
 2. Upload the contents of this folder (not the ZIP file itself).
 3. In https://vercel.com/, import that GitHub repository.
-4. In Vercel project settings, add the same two environment variables from `.env.local`.
+4. In Vercel project settings, add all four environment variables from `.env.local` (the two Supabase values plus the two portal-login values).
 5. Deploy. Vercel will detect Next.js automatically.
 6. Open the deployed URL and test `/admin` and the trainee homepage.
 
