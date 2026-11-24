@@ -92,28 +92,24 @@ export default function HomePage() {
   return (
     <main className="shell">
 
-      {/* WEBSITE HEADER */}
+      {/* Header */}
       <header className="topbar">
-
         <Link href="/" className="brand">
-
           <img
-            src="/Globexa_logo.png"
+            src="/Globexa_logo.jpg"
             alt="Globexa Logo"
             style={{
               height: "46px",
               width: "auto",
               maxWidth: "190px",
               objectFit: "contain",
+              display: "block"
             }}
           />
-
           <span>TRAINING PORTAL</span>
-
         </Link>
 
         <div className="header-actions">
-
           <Link href="/admin" className="admin-link">
             Admin login
           </Link>
@@ -127,13 +123,11 @@ export default function HomePage() {
           >
             Log out
           </button>
-
         </div>
       </header>
 
-      {/* HERO SECTION */}
+      {/* Hero */}
       <section className="hero">
-
         <p className="eyebrow">
           LEARNING RESOURCE CENTRE
         </p>
@@ -143,7 +137,6 @@ export default function HomePage() {
         <p className="hero-copy">
           Select a training part and watch the lessons at your own pace.
         </p>
-
       </section>
 
       {!supabaseConfigured && (
@@ -159,18 +152,15 @@ export default function HomePage() {
         </div>
       )}
 
-      {/* VIDEO LIBRARY */}
+      {/* Video Collection */}
       <section className="library">
-
         <div className="library-head">
-
           <div>
             <p className="eyebrow">VIDEO COLLECTION</p>
             <h2>Browse training videos</h2>
           </div>
 
           <div className="controls">
-
             <label className="sr-only" htmlFor="part">
               Select training part
             </label>
@@ -193,42 +183,29 @@ export default function HomePage() {
               value={search}
               onChange={(e) => setSearch(e.target.value)}
             />
-
           </div>
-
         </div>
 
         {loading ? (
-          <p className="empty">Loading videos…</p>
+          <p className="empty">Loading videos...</p>
         ) : visibleVideos.length === 0 ? (
-
           <div className="empty-card">
-
             <div className="empty-icon">▶</div>
-
             <h3>No videos added yet</h3>
-
             <p>
               Training videos for {PARTS[part - 1].label}
               will appear here.
             </p>
-
           </div>
-
         ) : (
-
           <div className="video-grid">
-
             {visibleVideos.map((video) => (
-
               <button
                 className="video-card"
                 key={video.id}
                 onClick={() => setSelected(video)}
               >
-
                 <div className="thumb-wrap">
-
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
                     src={video.thumbnail_url}
@@ -237,11 +214,9 @@ export default function HomePage() {
                   />
 
                   <span className="play">▶</span>
-
                 </div>
 
                 <div className="video-info">
-
                   <span className="video-number">
                     VIDEO {video.id.slice(0, 4).toUpperCase()}
                   </span>
@@ -251,48 +226,35 @@ export default function HomePage() {
                   {video.description && (
                     <p>{video.description}</p>
                   )}
-
                 </div>
-
               </button>
-
             ))}
-
           </div>
-
         )}
 
         <div className="pagination-note">
           Showing up to 15 videos · {PARTS[part - 1].label}
         </div>
-
       </section>
 
-      {/* FOOTER */}
+      {/* Footer */}
       <footer className="footer">
-        Training Video Portal
+        Globexa Training Portal
       </footer>
 
-      {/* VIDEO PLAYER */}
+      {/* Video Player */}
       {selected && (
-
         <div
           className="modal-backdrop"
           onClick={() => setSelected(null)}
         >
-
           <div
             className="player-modal"
             onClick={(e) => e.stopPropagation()}
           >
-
             <div className="player-head">
-
               <div>
-                <span className="eyebrow">
-                  NOW PLAYING
-                </span>
-
+                <span className="eyebrow">NOW PLAYING</span>
                 <h2>{selected.title}</h2>
               </div>
 
@@ -303,18 +265,15 @@ export default function HomePage() {
               >
                 ×
               </button>
-
             </div>
 
             <div className="player-frame">
-
               <iframe
                 src={driveEmbedUrl(selected.video_url)}
                 title={selected.title}
                 allow="autoplay; fullscreen"
                 allowFullScreen
               />
-
             </div>
 
             {selected.description && (
@@ -322,13 +281,9 @@ export default function HomePage() {
                 {selected.description}
               </p>
             )}
-
           </div>
-
         </div>
-
       )}
-
     </main>
   );
 }
