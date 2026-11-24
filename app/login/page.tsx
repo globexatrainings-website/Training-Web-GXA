@@ -49,7 +49,7 @@ export default function LoginPage() {
       <form className="portal-login-card" onSubmit={submit}>
 
         {/* Globexa Short Logo */}
-        <div className="login-brand">
+<div className="login-brand">
   <img
     src="/Globexa_logo%20-%20Copy%20-%20Copy.png"
     alt="Globexa Logo"
