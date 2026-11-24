@@ -17,15 +17,25 @@ export default function HomePage() {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [selected, setSelected] = useState<TrainingVideo | null>(null);
+  const [authChecked, setAuthChecked] = useState(false);
 
   useEffect(() => {
-    async function load() {
-      if (!supabase) { setLoading(false); return; }
-      const { data, error } = await supabase.from("training_videos").select("*").order("part_number").order("created_at");
+    if (!supabase) { setLoading(false); setAuthChecked(true); window.location.href = "/login"; return; }
+    let alive = true;
+    async function loadForUser() {
+      const { data: sessionData } = await supabase!.auth.getSession();
+      if (!sessionData.session) { window.location.href = "/login"; return; }
+      const { data, error } = await supabase!.from("training_videos").select("*").order("part_number").order("created_at");
+      if (!alive) return;
       if (!error && data) setVideos(data as TrainingVideo[]);
       setLoading(false);
+      setAuthChecked(true);
     }
-    load();
+    loadForUser();
+    const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (!session) window.location.href = "/login";
+    });
+    return () => { alive = false; listener.subscription.unsubscribe(); };
   }, []);
 
   const visibleVideos = useMemo(() => videos
@@ -37,7 +47,7 @@ export default function HomePage() {
     <main className="shell">
       <header className="topbar">
         <Link href="/" className="brand"><span className="brand-mark">▶</span><span>TRAINING PORTAL</span></Link>
-        <div className="header-actions"><Link href="/admin" className="admin-link">Admin login</Link><button className="logout-btn" onClick={async () => { await fetch("/api/portal-logout", { method: "POST" }); window.location.href = "/login"; }}>Log out</button></div>
+        <div className="header-actions"><Link href="/admin" className="admin-link">Admin login</Link><button className="logout-btn" onClick={async () => { await supabase?.auth.signOut(); window.location.href = "/login"; }}>Log out</button></div>
       </header>
 
       <section className="hero">
@@ -47,8 +57,9 @@ export default function HomePage() {
       </section>
 
       {!supabaseConfigured && (
-        <div className="notice"><strong>Setup required:</strong> Connect this website to Supabase by adding the two environment variables shown in the README.</div>
+        <div className="notice"><strong>Setup required:</strong> Connect this website to Supabase before trainees can sign in.</div>
       )}
+      {authChecked && <div className="notice">Signed in successfully. Your training access is active.</div>}
 
       <section className="library">
         <div className="library-head">
