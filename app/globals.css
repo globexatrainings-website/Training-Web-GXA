@@ -1,28 +1,141 @@
-/* Globexa portal logo */
-.portal-brand-logo {
-  display: block;
-  width: 145px;
-  height: 42px;
-  object-fit: contain;
-  object-position: left center;
-  background: transparent;
-  flex-shrink: 0;
+
+/* ==================================
+   GLOBEXA PORTAL HEADER LOGO
+   ================================== */
+
+.topbar {
+  min-height: 76px;
+  height: auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 15px;
 }
 
 .brand {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 9px;
+  text-decoration: none;
+  min-width: 0;
+  flex-shrink: 1;
 }
 
-@media (max-width: 480px) {
+.portal-brand-logo {
+  display: block;
+  width: 105px;
+  max-width: 105px;
+  height: 32px;
+  object-fit: contain;
+  object-position: left center;
+  flex-shrink: 0;
+  background: transparent;
+}
+
+.brand-divider {
+  width: 1px;
+  height: 25px;
+  background: var(--line);
+  flex-shrink: 0;
+}
+
+.brand-text {
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 1px;
+  white-space: nowrap;
+  color: var(--ink);
+}
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-shrink: 0;
+}
+
+.admin-link {
+  font-size: 13px;
+  white-space: nowrap;
+}
+
+.logout-btn {
+  white-space: nowrap;
+}
+
+/* ==================================
+   GOOGLE DRIVE THUMBNAILS
+   ================================== */
+
+.thumb-wrap {
+  position: relative;
+  aspect-ratio: 16 / 9;
+  width: 100%;
+  background: #e9edf5;
+  overflow: hidden;
+}
+
+.thumb {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+/* ==================================
+   MOBILE HEADER
+   ================================== */
+
+@media (max-width: 600px) {
+  .topbar {
+    min-height: 65px;
+    gap: 8px;
+  }
+
   .portal-brand-logo {
-    width: 105px;
-    height: 34px;
+    width: 80px;
+    max-width: 80px;
+    height: 27px;
   }
 
   .brand {
+    gap: 6px;
+  }
+
+  .brand-text {
+    font-size: 8px;
+    letter-spacing: 0.5px;
+  }
+
+  .brand-divider {
+    height: 20px;
+  }
+
+  .header-actions {
     gap: 7px;
+  }
+
+  .admin-link {
+    font-size: 11px;
+  }
+
+  .logout-btn {
     font-size: 10px;
+    padding: 6px 8px;
+  }
+}
+
+@media (max-width: 380px) {
+  .portal-brand-logo {
+    width: 65px;
+    max-width: 65px;
+  }
+
+  .brand-text {
+    font-size: 7px;
+  }
+
+  .header-actions {
+    gap: 5px;
   }
 }
