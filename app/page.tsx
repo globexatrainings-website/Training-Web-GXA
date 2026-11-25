@@ -1,64 +1,38 @@
 
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useCallback } from "react";
 import Link from "next/link";
 import { supabase, supabaseConfigured } from "@/lib/supabase";
 import { PARTS, TrainingVideo } from "@/lib/types";
 
+// Extract Google Drive file ID
+function getDriveFileId(raw: string) {
+  const match =
+    raw.match(/\/file\/d\/([^/?]+)/) ||
+    raw.match(/[?&]id=([^&]+)/);
+
+  return match?.[1] ?? null;
+}
+
+// Convert Google Drive link into an embedded video URL
 function driveEmbedUrl(raw: string) {
-  const fileMatch =
-    raw.match(/\/file\/d\/([^/]+)/) ||
-    raw.match(/[?&]id=([^&]+)/);
+  const id = getDriveFileId(raw);
 
-  if (fileMatch?.[1]) {
-    return `https://drive.google.com/file/d/${fileMatch[1]}/preview`;
+  if (id) {
+    return `https://drive.google.com/file/d/${id}/preview`;
   }
 
   return raw;
 }
 
-// Convert Google Drive links into image thumbnail URLs
+// Automatically generate a Google Drive thumbnail URL
 function driveThumbnailUrl(raw: string) {
-  if (!raw) return "";
+  const id = getDriveFileId(raw);
 
-  const fileMatch =
-    raw.match(/\/file\/d\/([^/]+)/) ||
-    raw.match(/[?&]id=([^&]+)/);
+  if (!id) return "";
 
-  if (fileMatch?.[1]) {
-    return `https://drive.google.com/thumbnail?id=${fileMatch[1]}&sz=w1000`;
-  }
-
-  return raw;
-}
-
-// Thumbnail component with an error fallback
-function VideoThumbnail({ url }: { url: string }) {
-  const [failed, setFailed] = useState(false);
-
-  const imageUrl = driveThumbnailUrl(url);
-
-  if (!imageUrl || failed) {
-    return (
-      <div className="thumb-wrap thumbnail-fallback">
-        <span>Thumbnail unavailable</span>
-      </div>
-    );
-  }
-
-  return (
-    <div className="thumb-wrap">
-      <img
-        src={imageUrl}
-        alt="Training video thumbnail"
-        className="thumb"
-        loading="lazy"
-        onError={() => setFailed(true)}
-      />
-      <span className="play">▶</span>
-    </div>
-  );
+  return `https://drive.google.com/thumbnail?id=${id}&sz=w1200`;
 }
 
 export default function HomePage() {
@@ -69,6 +43,26 @@ export default function HomePage() {
   const [selected, setSelected] = useState<TrainingVideo | null>(null);
   const [authChecked, setAuthChecked] = useState(false);
 
+  // Fetch videos from Supabase
+  const loadVideos = useCallback(async () => {
+    if (!supabase) return;
+
+    const { data, error } = await supabase
+      .from("training_videos")
+      .select("*")
+      .order("part_number", { ascending: true })
+      .order("created_at", { ascending: true });
+
+    if (!error && data) {
+      setVideos(data as TrainingVideo[]);
+    } else if (error) {
+      console.error("Unable to load training videos:", error.message);
+    }
+
+    setLoading(false);
+  }, []);
+
+  // Authentication and automatic video refresh
   useEffect(() => {
     if (!supabase) {
       setLoading(false);
@@ -79,32 +73,42 @@ export default function HomePage() {
 
     let alive = true;
 
-    async function loadForUser() {
-      const { data: sessionData } = await supabase!.auth.getSession();
+    async function initialize() {
+      const { data } = await supabase!.auth.getSession();
 
-      if (!sessionData.session) {
+      if (!alive) return;
+
+      if (!data.session) {
         window.location.href = "/login";
         return;
       }
 
-      const { data, error } = await supabase!
-        .from("training_videos")
-        .select("*")
-        .order("part_number")
-        .order("created_at");
+      await loadVideos();
 
-      if (!alive) return;
-
-      if (!error && data) {
-        setVideos(data as TrainingVideo[]);
+      if (alive) {
+        setAuthChecked(true);
       }
-
-      setLoading(false);
-      setAuthChecked(true);
     }
 
-    loadForUser();
+    initialize();
 
+    // Automatically check for new videos every 15 seconds
+    const refreshInterval = window.setInterval(() => {
+      if (document.visibilityState === "visible") {
+        loadVideos();
+      }
+    }, 15000);
+
+    // Refresh immediately when trainee returns to the portal tab
+    const handleVisibility = () => {
+      if (document.visibilityState === "visible") {
+        loadVideos();
+      }
+    };
+
+    document.addEventListener("visibilitychange", handleVisibility);
+
+    // Handle login expiration
     const { data: listener } = supabase.auth.onAuthStateChange(
       (_event, session) => {
         if (!session) {
@@ -115,10 +119,13 @@ export default function HomePage() {
 
     return () => {
       alive = false;
+      window.clearInterval(refreshInterval);
+      document.removeEventListener("visibilitychange", handleVisibility);
       listener.subscription.unsubscribe();
     };
-  }, []);
+  }, [loadVideos]);
 
+  // Filter videos according to selected part and search
   const visibleVideos = useMemo(
     () =>
       videos
@@ -134,9 +141,15 @@ export default function HomePage() {
 
   return (
     <main className="shell">
+
+      {/* Header */}
       <header className="topbar">
         <Link href="/" className="brand">
-          <span className="brand-mark">▶</span>
+          <img
+            src="/Globexa_logo.jpg"
+            alt="Globexa Logo"
+            className="portal-brand-logo"
+          />
           <span>TRAINING PORTAL</span>
         </Link>
 
@@ -157,9 +170,12 @@ export default function HomePage() {
         </div>
       </header>
 
+      {/* Hero */}
       <section className="hero">
         <p className="eyebrow">LEARNING RESOURCE CENTRE</p>
+
         <h1>Training Video Library</h1>
+
         <p className="hero-copy">
           Select a training part and watch the lessons at your own pace.
         </p>
@@ -178,7 +194,9 @@ export default function HomePage() {
         </div>
       )}
 
+      {/* Video library */}
       <section className="library">
+
         <div className="library-head">
           <div>
             <p className="eyebrow">VIDEO COLLECTION</p>
@@ -212,50 +230,87 @@ export default function HomePage() {
         </div>
 
         {loading ? (
-          <p className="empty">Loading videos…</p>
+          <p className="empty">Loading videos...</p>
         ) : visibleVideos.length === 0 ? (
           <div className="empty-card">
             <div className="empty-icon">▶</div>
             <h3>No videos added yet</h3>
             <p>
-              Training videos for {PARTS[part - 1].label} will appear here.
+              Training videos for {PARTS[part - 1]?.label} will appear here.
             </p>
           </div>
         ) : (
           <div className="video-grid">
-            {visibleVideos.map((video) => (
-              <button
-                className="video-card"
-                key={video.id}
-                onClick={() => setSelected(video)}
-              >
-                <VideoThumbnail url={video.thumbnail_url} />
+            {visibleVideos.map((video) => {
+              const thumbnail =
+                video.thumbnail_url?.trim() ||
+                driveThumbnailUrl(video.video_url);
 
-                <div className="video-info">
-                  <span className="video-number">
-                    VIDEO {video.id.slice(0, 4).toUpperCase()}
-                  </span>
+              return (
+                <button
+                  className="video-card"
+                  key={video.id}
+                  onClick={() => setSelected(video)}
+                >
+                  <div className="thumb-wrap">
+                    {thumbnail && (
+                      <img
+                        src={thumbnail}
+                        alt={video.title}
+                        className="thumb"
+                        loading="lazy"
+                        onError={(e) => {
+                          const img = e.currentTarget;
+                          const fallback = driveThumbnailUrl(video.video_url);
 
-                  <h3>{video.title}</h3>
+                          // Try the Google Drive thumbnail if the
+                          // manually provided thumbnail fails.
+                          if (
+                            fallback &&
+                            img.dataset.fallbackTried !== "true"
+                          ) {
+                            img.dataset.fallbackTried = "true";
+                            img.src = fallback;
+                          } else {
+                            img.style.display = "none";
+                          }
+                        }}
+                      />
+                    )}
 
-                  {video.description && (
-                    <p>{video.description}</p>
-                  )}
-                </div>
-              </button>
-            ))}
+                    <span className="play">▶</span>
+                  </div>
+
+                  <div className="video-info">
+                    <span className="video-number">
+                      VIDEO {video.id.slice(0, 4).toUpperCase()}
+                    </span>
+
+                    <h3>{video.title}</h3>
+
+                    {video.description && (
+                      <p>{video.description}</p>
+                    )}
+                  </div>
+                </button>
+              );
+            })}
           </div>
         )}
 
         <div className="pagination-note">
-          Showing up to 15 videos · {PARTS[part - 1].label}
+          Showing up to 15 videos · {PARTS[part - 1]?.label}
+          <span> · Auto-refresh every 15 seconds</span>
         </div>
+
       </section>
 
+      {/* Footer */}
       <footer className="footer">
         Globexa Training Portal
       </footer>
 
+      {/* Video player */}
       {selected && (
         <div
           className="modal-backdrop"
@@ -284,8 +339,9 @@ export default function HomePage() {
               <iframe
                 src={driveEmbedUrl(selected.video_url)}
                 title={selected.title}
-                allow="autoplay; fullscreen"
+                allow="autoplay; fullscreen; picture-in-picture"
                 allowFullScreen
+                loading="eager"
               />
             </div>
 
@@ -297,6 +353,7 @@ export default function HomePage() {
           </div>
         </div>
       )}
+
     </main>
   );
 }
