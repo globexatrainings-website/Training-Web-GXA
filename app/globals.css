@@ -37,6 +37,21 @@ button, input, select, textarea {
   border-bottom: 1px solid var(--line);
 }
 
+/* Thumbnail fallback */
+.thumbnail-fallback {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #e9edf5;
+  color: #687386;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.thumbnail-fallback span {
+  text-align: center;
+}
+
 .brand {
   display: flex;
   align-items: center;
