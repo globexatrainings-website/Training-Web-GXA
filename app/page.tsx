@@ -6,7 +6,6 @@ import Link from "next/link";
 import { supabase, supabaseConfigured } from "@/lib/supabase";
 import { PARTS, TrainingVideo } from "@/lib/types";
 
-// Extract Google Drive file ID
 function getDriveFileId(raw: string) {
   const match =
     raw.match(/\/file\/d\/([^/?]+)/) ||
@@ -15,7 +14,6 @@ function getDriveFileId(raw: string) {
   return match?.[1] ?? null;
 }
 
-// Convert Google Drive link into an embedded video URL
 function driveEmbedUrl(raw: string) {
   const id = getDriveFileId(raw);
 
@@ -26,7 +24,6 @@ function driveEmbedUrl(raw: string) {
   return raw;
 }
 
-// Automatically generate a Google Drive thumbnail URL
 function driveThumbnailUrl(raw: string) {
   const id = getDriveFileId(raw);
 
@@ -43,7 +40,6 @@ export default function HomePage() {
   const [selected, setSelected] = useState<TrainingVideo | null>(null);
   const [authChecked, setAuthChecked] = useState(false);
 
-  // Fetch videos from Supabase
   const loadVideos = useCallback(async () => {
     if (!supabase) return;
 
@@ -56,13 +52,12 @@ export default function HomePage() {
     if (!error && data) {
       setVideos(data as TrainingVideo[]);
     } else if (error) {
-      console.error("Unable to load training videos:", error.message);
+      console.error("Unable to load videos:", error.message);
     }
 
     setLoading(false);
   }, []);
 
-  // Authentication and automatic video refresh
   useEffect(() => {
     if (!supabase) {
       setLoading(false);
@@ -85,21 +80,17 @@ export default function HomePage() {
 
       await loadVideos();
 
-      if (alive) {
-        setAuthChecked(true);
-      }
+      if (alive) setAuthChecked(true);
     }
 
     initialize();
 
-    // Automatically check for new videos every 15 seconds
     const refreshInterval = window.setInterval(() => {
       if (document.visibilityState === "visible") {
         loadVideos();
       }
     }, 15000);
 
-    // Refresh immediately when trainee returns to the portal tab
     const handleVisibility = () => {
       if (document.visibilityState === "visible") {
         loadVideos();
@@ -108,7 +99,6 @@ export default function HomePage() {
 
     document.addEventListener("visibilitychange", handleVisibility);
 
-    // Handle login expiration
     const { data: listener } = supabase.auth.onAuthStateChange(
       (_event, session) => {
         if (!session) {
@@ -125,7 +115,6 @@ export default function HomePage() {
     };
   }, [loadVideos]);
 
-  // Filter videos according to selected part and search
   const visibleVideos = useMemo(
     () =>
       videos
@@ -142,15 +131,15 @@ export default function HomePage() {
   return (
     <main className="shell">
 
-      {/* Header */}
       <header className="topbar">
         <Link href="/" className="brand">
           <img
             src="/Globexa_logo.jpg"
-            alt="Globexa Logo"
+            alt="Globexa Immigration"
             className="portal-brand-logo"
           />
-          <span>TRAINING PORTAL</span>
+          <span className="brand-divider"></span>
+          <span className="brand-text">TRAINING PORTAL</span>
         </Link>
 
         <div className="header-actions">
@@ -170,12 +159,9 @@ export default function HomePage() {
         </div>
       </header>
 
-      {/* Hero */}
       <section className="hero">
         <p className="eyebrow">LEARNING RESOURCE CENTRE</p>
-
         <h1>Training Video Library</h1>
-
         <p className="hero-copy">
           Select a training part and watch the lessons at your own pace.
         </p>
@@ -194,9 +180,7 @@ export default function HomePage() {
         </div>
       )}
 
-      {/* Video library */}
       <section className="library">
-
         <div className="library-head">
           <div>
             <p className="eyebrow">VIDEO COLLECTION</p>
@@ -263,8 +247,6 @@ export default function HomePage() {
                           const img = e.currentTarget;
                           const fallback = driveThumbnailUrl(video.video_url);
 
-                          // Try the Google Drive thumbnail if the
-                          // manually provided thumbnail fails.
                           if (
                             fallback &&
                             img.dataset.fallbackTried !== "true"
@@ -277,7 +259,6 @@ export default function HomePage() {
                         }}
                       />
                     )}
-
                     <span className="play">▶</span>
                   </div>
 
@@ -285,12 +266,8 @@ export default function HomePage() {
                     <span className="video-number">
                       VIDEO {video.id.slice(0, 4).toUpperCase()}
                     </span>
-
                     <h3>{video.title}</h3>
-
-                    {video.description && (
-                      <p>{video.description}</p>
-                    )}
+                    {video.description && <p>{video.description}</p>}
                   </div>
                 </button>
               );
@@ -300,17 +277,14 @@ export default function HomePage() {
 
         <div className="pagination-note">
           Showing up to 15 videos · {PARTS[part - 1]?.label}
-          <span> · Auto-refresh every 15 seconds</span>
+          {" · Auto-refresh every 15 seconds"}
         </div>
-
       </section>
 
-      {/* Footer */}
       <footer className="footer">
-        Globexa Training Portal
+        Globexa Immigration · Training Portal
       </footer>
 
-      {/* Video player */}
       {selected && (
         <div
           className="modal-backdrop"
@@ -353,7 +327,6 @@ export default function HomePage() {
           </div>
         </div>
       )}
-
     </main>
   );
 }
